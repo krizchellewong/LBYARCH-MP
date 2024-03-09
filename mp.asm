@@ -8,40 +8,59 @@ section .data
 reversedResult db "" ;converted string (reserved)
 reversedLen db 0
 result db ""
+buf times 16 db 0
 
 
 section .text
 global main
 
 main:
-    mov rbp, rsp; for correct debugging
-    ;write your code here
+    ; show menu GUI
     JMP show_menu
     
+terminate_program:
+    ; this section terminates the program
+    NEWLINE
+    PRINT_STRING "--Program terminated--"
+    NEWLINE
+    
+    xor rax, rax
+    ret
+    
 modeio:
+    ; this section is for inputting modes from the menu
     PRINT_STRING "Select mode: "
     GET_DEC 1, r8
     PRINT_DEC 1, r8
     NEWLINE
     
+    ; if 1, then DEC->RADIX
     CMP r8, 1
     JE decimal_to_radix
-    ;CMP r8, 2
-    ;JE radix_to_decimal
+    
+    ; if 2, then RADIX->DEC
+    CMP r8, 2
+    JE radix_to_decimal 
+    
+    ; else, jump to error thrower
     JMP invalid_mode
 
+; !!!====================== BEGINNING OF DECIMAL to RADIX-N SECTIONS
 decimal_to_radix:
+    ; this section converts dec to radix
+    ; asks for dec number
     PRINT_STRING "Enter a decimal number: "
     GET_DEC 8, r9
-    PRINT_DEC 8, r9
+    PRINT_DEC 8, r9 ; for removal due to CLI
     NEWLINE
     
+    ; asks for radix to convert to
     PRINT_STRING "Enter a desired radix: "
     GET_DEC 1, r10
     PRINT_DEC 1, r10
     NEWLINE
 
-        
+    ; NOTE: Should this be moved to a sort of function?
     ; Check if radix is in range [2, 16]
     cmp r10, 2  ; Check if radix < 2
     jl invalid_radix_mode_1
@@ -49,7 +68,8 @@ decimal_to_radix:
     jg invalid_radix_mode_1
 
     JMP d_to_r_conversion
-
+    
+    
 d_to_r_conversion:
     LEA RBX, reversedResult ; store address of reversedResult to rbx
     MOV RAX, r9 ; dividend
@@ -96,9 +116,7 @@ end_conversion:
     NEWLINE
     
     JMP terminate_program
-    
-
-;convert_loop:
+; !!!====================== END OF DECIMAL to RADIX-N SECTIONS
 
 invalid_mode: 
     PRINT_STRING "Invalid mode!"
@@ -132,8 +150,28 @@ show_menu:
     NEWLINE
     JMP modeio
   
-terminate_program:
+
+radix_to_decimal:
+    ; asks for radix-N number
+    PRINT_STRING "Enter a number: "
+    GET_STRING buf, r9
+    PRINT_STRING buf ; for removal due to CLI
     NEWLINE
-    PRINT_STRING "Program terminated"
+    
+    ; asks for its radix to convert to decimal properly
+    PRINT_STRING "Enter a desired radix: "
+    GET_DEC 1, r10
+    PRINT_DEC 1, r10
     NEWLINE
+
+    ; NOTE: Should this be moved to a sort of function?
+    ; Check if radix is in range [2, 16]
+    cmp r10, 2  ; Check if radix < 2
+    jl invalid_radix_mode_1
+    cmp r10, 16 ; Check if radix > 16
+    jg invalid_radix_mode_1
+
+    ; do conversion work here
+    mov r11, 0
+    PRINT_STRING buf
     ret
