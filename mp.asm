@@ -230,6 +230,12 @@ to_dec:
 bam:
     ; move character to RCX and convert to its equivalent in decimal
     movzx rcx, byte [numout + rsi - 1]
+    
+    ; check if lowercase, then capitalize
+    cmp rcx, 97
+    jge capitalize
+    
+    capped:
     sub rcx, '0'
     
     cmp rcx, 17 ; if greater than A or equal to
@@ -240,6 +246,12 @@ bam:
     mul rcx
     
     ret
+    
+capitalize:
+    ; if lower, make bigger
+    sub rcx, 32
+    jmp capped
+    
 num:
     ; there is a gap between 9 and A in ASCII of 7, so subtract if
     ; it is A+
@@ -271,6 +283,7 @@ pow:
 in_iter:
         mov byte ch, [buf + rax]           ; copy character from buffer
         mov byte [numout + rax], ch    ; writing one char from name to output
+        
         inc rax
         cmp byte [buf + rax], 0x0          ; GET_STRING terminating char 0
         jne in_iter                        ; if not terminate, keep on reading
