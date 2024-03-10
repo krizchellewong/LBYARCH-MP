@@ -4,6 +4,13 @@
 
 %include "io64.inc"
 
+section .data
+reversedResult db "" ;converted string (wwwwwreserved)
+reversedLen db 0
+result db ""
+buf: times 101 db 0x0a
+numout db ""
+
 section .text
 global main
 
@@ -148,13 +155,22 @@ show_menu:
 radix_to_decimal:
     ; asks for radix-N number
     PRINT_STRING "Enter a number: "
-    GET_STRING buf, 101
-    mov rax, 0
-    call input_iter
-    mov byte [numout + rax + 7], '!'
-    mov byte [numout + rax + 8], 0xa
-    mov rax, 0
-    call output_iter
+    
+    ; for some reason, this one would
+    ; try to read the \n or the EOF from the first GET_DEC
+    ; very weird...
+    GET_STRING buf, 2      
+    GET_STRING buf, 101 ; because of that, i need to call it twice but it works
+
+    ; clear register and input string
+    xor rax, rax
+    call in_iter
+    
+    ; add terminator to output string
+    mov byte [numout + rax + 7], 0xa
+    
+    xor rax, rax ; clear register and print string
+    call out_iter
     
     NEWLINE
     
@@ -164,7 +180,7 @@ radix_to_decimal:
     PRINT_DEC 1, r10
     NEWLINE
 
-    ; NOTE: Should this be moved to a sort of function?
+    ; NOTE: Should this be moved to a sort of section?
     ; Check if radix is in range [2, 16]
     cmp r10, 2  ; Check if radix < 2
     jl invalid_radix_mode_1
@@ -172,29 +188,26 @@ radix_to_decimal:
     jg invalid_radix_mode_1
 
     ; do conversion work here
-    mov r11, 0
+    
+    
     
     PRINT_STRING "Output (Decimal): "
     ret
     
-input_iter: ; one iteration of input loop
-        mov byte ch, [buf + rax]
-        mov byte [numout + rax + 7], ch        ; writing one char from name to output
+; this section inputs each character and copies it to numout
+in_iter:
+        mov byte ch, [buf + rax]           ; copy character from buffer
+        mov byte [numout + rax + 7], ch    ; writing one char from name to output
         inc rax
-        cmp byte [buf + rax], 0x0             ; GET_STRING ends string with 0-code char
-        jne input_iter
+        cmp byte [buf + rax], 0x0          ; GET_STRING terminating char 0
+        jne in_iter                        ; if not terminate, keep on reading
         ret
 
-output_iter: ; one iteration of output loop
+; this section outputs input strings
+out_iter:
         PRINT_CHAR [numout + rax]        ; char given to out
         inc rax
-        cmp byte [numout + rax], 0xa     ; if char is NUL, iteration stops
-        jne output_iter
+        cmp byte [numout + rax], 0xa     ; if char is NULL, STOP
+        jne out_iter                    
         ret
     
-section .data
-reversedResult db "" ;converted string (wwwwwreserved)
-reversedLen db 0
-result db ""
-buf: times 101 db 0x0a
-numout db 'Hello, '
