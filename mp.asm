@@ -5,9 +5,8 @@
 %include "io64.inc"
 
 section .data
-reversedResult db "" ;converted string (wwwwwreserved)
-reversedLen db 0
-result db ""
+reversedResult times 256 db 0
+result times 256 dq 0
 buf: times 101 db 0x0a
 numout db ""
 
@@ -19,15 +18,25 @@ main:
     ; show menu GUI
     JMP show_menu
     
+show_menu:
+    PRINT_STRING "--Number Base Conversion--"
+    NEWLINE
+    NEWLINE
+    
+    PRINT_STRING "1. Decimal to Radix-N"
+    NEWLINE
+    
+    PRINT_STRING "2. Radix-N to Decimal"
+    NEWLINE
+    NEWLINE
+    NEWLINE
+    JMP modeio
+    
 terminate_program:
     ; this section terminates the program
     NEWLINE
     PRINT_STRING "--Program terminated--"
     NEWLINE
-    
-    ;exit with error level 0
-    mov ax,0x4c00
-    int 0x21
     
     xor rax, rax
     ret
@@ -64,58 +73,56 @@ decimal_to_radix:
     GET_DEC 1, r10
     PRINT_DEC 1, r10
     NEWLINE
+    
+    NEWLINE
+    PRINT_STRING "Output (radix-"
+    PRINT_DEC 8, r10
+    PRINT_STRING "):"    
+    
+    
 
-    call radix_err_chk
+    ; NOTE: Should this be moved to a sort of function?
+    ; Check if radix is in range [2, 16]
+    cmp r10, 2  ; Check if radix < 2
+    jl invalid_radix_mode_1
+    cmp r10, 16 ; Check if radix > 16
+    jg invalid_radix_mode_1
 
     JMP d_to_r_conversion
     
     
 d_to_r_conversion:
-    LEA RBX, reversedResult ; store address of reversedResult to rbx
     MOV RAX, r9 ; dividend
     MOV RCX, r10 ; divisor
     MOV RDX, 0 ; remainder
+    MOV RSI, 0 ; store length temporarily
     ; PRINT_DEC 1, r9
 
 d_to_r_loop:
-    XOR RDX, RDX
+    
+    MOV RDX, 0
     DIV RCX
-    PRINT_DEC 8, RDX
-    MOV [RBX], RDX
-    PRINT_STRING reversedResult
-    INC RBX
-    INC byte [reversedLen]
-    OR RAX, RAX
-    JZ end_conversion
+    MOV [reversedResult + RSI], DL
+    INC RSI   
+    
+    CMP RAX, 0
+    JE buffer
+    
     JMP d_to_r_loop
     
-flip_converted:
-    LEA RAX, reversedResult ; store address of reversed
-    ADD RAX, reversedLen ; go to end of reversedResult
-    LEA RBX, result ; start of result string
-    JMP flip_loop
+buffer: 
+    DEC RSI ; get rid of the padded 0
+    JMP flip_result_loop    
     
-flip_loop:
-    MOV RCX, [reversedLen]
-    CMP RAX, 0
-    JZ end_conversion
-    MOV RDI, [RAX]  
-    MOV [RBX], RDI
-    PRINT_STRING result
-    INC RBX
-    DEC RAX
-    DEC byte [reversedLen]
-    JMP flip_loop
+flip_result_loop:
+    MOV DL, [reversedResult + RSI] 
+    PRINT_HEX 8, DL
+    DEC RSI
+    CMP RSI, -1
+    JE terminate_program
+    JMP flip_result_loop
 
-end_conversion:    
-    NEWLINE
-    PRINT_STRING "Output (radix-"
-    PRINT_DEC 8, r10
-    PRINT_STRING "):"    
-    PRINT_STRING reversedResult
-    NEWLINE
-    
-    JMP terminate_program
+
 ; !!!====================== END OF DECIMAL to RADIX-N SECTIONS
 
 invalid_mode: 
@@ -136,19 +143,7 @@ invalid_radix_mode_2:
     JMP terminate_program
     
     
-show_menu:
-    PRINT_STRING "--Number Base Conversion--"
-    NEWLINE
-    NEWLINE
-    
-    PRINT_STRING "1. Decimal to Radix-N"
-    NEWLINE
-    
-    PRINT_STRING "2. Radix-N to Decimal"
-    NEWLINE
-    NEWLINE
-    NEWLINE
-    JMP modeio
+
   
 ; !!!====================== BEGINNING OF RADIX-N TO DECIMAL SECTIONS
 radix_to_decimal:
@@ -165,6 +160,9 @@ radix_to_decimal:
     xor rax, rax
     call in_iter
     
+    ; add terminator to output string
+    mov byte [numout + rax + 7], 0xa
+    
     xor rax, rax ; clear register and print string
     call out_iter
     
@@ -176,109 +174,24 @@ radix_to_decimal:
     PRINT_DEC 1, r10
     NEWLINE
 
-    call radix_err_chk
+    ; NOTE: Should this be moved to a sort of section?
+    ; Check if radix is in range [2, 16]
+    cmp r10, 2  ; Check if radix < 2
+    jl invalid_radix_mode_1
+    cmp r10, 16 ; Check if radix > 16
+    jg invalid_radix_mode_1
 
-    ; don't forget to verify if all digits are valid
-    ; if 13, max character should be D
     ; do conversion work here
     
-    xor rax, rax ; clear register and print string
     
-; get the count
-scan_string:
-    inc rax
-    mov rsi, rax
-    cmp byte [numout + rax], 0xa
-    jne scan_string
-
-xor rax, rax
-
-; r11 is our exponent
-; r15 is the output of the conversion
-xor r11, r11
-xor r15, r15
-
-; rsi is our loop counter    
-to_dec:   
-    ; to convert from N to DEC
-    ; (i_0 * N^3) + ... + (i_3 * N^0)
-    ; rax is the i
-    ; r12 is the exponent for a singular term 
-    mov rax, r10 
-    mov r12, r11
     
-    ; call pow to calculate one term
-    call pow
-    
-    ; call bam to extract the digit and properly
-    ; convert from character to its digit
-    call bam
-    
-    ; add to sum
-    add r15, rax
-    xor rax, rax
-    inc r11 ; move to the next exponent
-  
-    ; reduce counter
-    sub rsi, 1
-    jnz to_dec
-    
-    NEWLINE
     PRINT_STRING "Output (Decimal): "
-    PRINT_DEC 8, r15
-    NEWLINE
-    
-    ; clear registers
-    xor rax, rax
-    xor r11, r11
-    xor r12, r12
-    xor r15, r15
     ret
-
-bam:
-    ; move character to RCX and convert to its equivalent in decimal
-    movzx rcx, byte [numout + rsi - 1]
-    sub rcx, '0'
-    
-    cmp rcx, 17 ; if greater than A or equal to
-    jge num
-    
-    ; multiple that to rax, the product of N^X
-    reduced:
-    mul rcx
-    
-    ret
-num:
-    ; there is a gap between 9 and A in ASCII of 7, so subtract if
-    ; it is A+
-    sub rcx, 7 
-    jmp reduced
-                    
-pow:
-    mov rax, 1
-    mov rcx, r10
-    je done
-    
-    pow_loop:
-        mul rcx
-        
-        dec r12
-   
-        jg pow_loop
-    
-    done:
-        ;PRINT_DEC 2, r10
-        ;PRINT_STRING " raised to "
-        ;PRINT_DEC 2, r11
-        ;NEWLINE
-        ;PRINT_DEC 8, rax
-        ;NEWLINE
-        ret
     
 ; this section inputs each character and copies it to numout
 in_iter:
         mov byte ch, [buf + rax]           ; copy character from buffer
-        mov byte [numout + rax], ch    ; writing one char from name to output
+        mov byte [numout + rax + 7], ch    ; writing one char from name to output
         inc rax
         cmp byte [buf + rax], 0x0          ; GET_STRING terminating char 0
         jne in_iter                        ; if not terminate, keep on reading
@@ -292,12 +205,3 @@ out_iter:
         jne out_iter                    
         ret
     
-radix_err_chk:
-    ; NOTE: Should this be moved to a sort of function?
-    ; Check if radix is in range [2, 16]
-    cmp r10, 2  ; Check if radix < 2
-    jl invalid_radix_mode_1
-    cmp r10, 16 ; Check if radix > 16
-    jg invalid_radix_mode_1
-    
-    ret
