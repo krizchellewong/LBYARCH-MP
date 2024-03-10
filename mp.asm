@@ -95,31 +95,72 @@ d_to_r_conversion:
     MOV RCX, r10 ; divisor
     MOV RDX, 0 ; remainder
     MOV RSI, 0 ; store length temporarily
-    ; PRINT_DEC 1, r9
+        
 
 d_to_r_loop:
-    
-    MOV RDX, 0
-    DIV RCX
-    MOV [reversedResult + RSI], DL
-    INC RSI   
-    
+
     CMP RAX, 0
     JE buffer
     
+    MOV RDX, 0
+    DIV RCX
+    
+    MOV [reversedResult + RSI], DL
+    INC RSI   
+    
     JMP d_to_r_loop
+    
+capitalize_mode1: 
+    CMP DL, 10
+    JE cap_a
+    CMP DL, 11
+    JE cap_b
+    CMP DL, 12
+    JE cap_c
+    CMP DL, 13
+    JE cap_d
+    CMP DL, 14
+    JE cap_e
+    CMP DL, 15
+    JE cap_f
+ 
+    
+cap_a:
+    PRINT_STRING "A"
+    JMP flip_result_loop
+cap_b:
+    PRINT_STRING "B"
+    JMP flip_result_loop
+cap_c:
+    PRINT_STRING "C"
+    JMP flip_result_loop
+cap_d:
+    PRINT_STRING "D"
+    JMP flip_result_loop
+cap_e:
+    PRINT_STRING "E"
+    JMP flip_result_loop 
+cap_f:
+    PRINT_STRING "F"
+    JMP flip_result_loop  
     
 buffer: 
     DEC RSI ; get rid of the padded 0
     JMP flip_result_loop    
     
 flip_result_loop:
-    MOV DL, [reversedResult + RSI] 
-    PRINT_HEX 8, DL
-    DEC RSI
     CMP RSI, -1
     JE terminate_program
+    
+    
+    MOV DL, [reversedResult + RSI]
+    
+    DEC RSI
+    CMP DL, 9
+    JG capitalize_mode1 
+    PRINT_HEX 8, DL
     JMP flip_result_loop
+
 
 
 ; !!!====================== END OF DECIMAL to RADIX-N SECTIONS
