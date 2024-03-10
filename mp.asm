@@ -38,6 +38,10 @@ terminate_program:
     PRINT_STRING "--Program terminated--"
     NEWLINE
     
+    ;exit with error level 0
+    mov ax,0x4c00
+    int 0x21
+    
     xor rax, rax
     ret
     
