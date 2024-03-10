@@ -1,0 +1,12 @@
+--Number Base Conversion--
+
+1. Decimal to Radix-N
+2. Radix-N to Decimal
+
+
+Select mode: 1
+Enter a decimal number: 911222333444555666
+Enter a desired radix: 15
+
+Output (radix-15):213318e076ae587b
+--Program terminated--

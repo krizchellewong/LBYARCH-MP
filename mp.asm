@@ -78,12 +78,14 @@ decimal_to_radix:
     PRINT_DEC 1, r10
     NEWLINE
     
+    call radix_err_chk
+    
     NEWLINE
     PRINT_STRING "Output (radix-"
     PRINT_DEC 8, r10
     PRINT_STRING "):"    
     
-    call radix_err_chk
+    
 
     JMP d_to_r_conversion
     
@@ -129,13 +131,6 @@ invalid_mode:
 
 invalid_radix_mode_1:
     PRINT_STRING "Invalid radix!"
-    NEWLINE
-    JMP terminate_program
-
-invalid_radix_mode_2:
-    PRINT_STRING "Invalid radix-"
-    PRINT_DEC 1, r10
-    PRINT_STRING " number!"
     NEWLINE
     JMP terminate_program
     
@@ -251,9 +246,9 @@ bam:
     
     ; multiple that to rax, the product of N^X
     reduced:
-        ; check if allowed
+        ; check if allowedFFF
         cmp rcx, r10
-        jg invalid_rad_number
+        jge invalid_rad_number
         
     mul rcx
     

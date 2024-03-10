@@ -1,0 +1,11 @@
+--Number Base Conversion--
+
+1. Decimal to Radix-N
+2. Radix-N to Decimal
+
+
+Select mode: 2
+Enter a number: AAAABBBBCCCC2222
+Enter a desired radix: 13
+
+Output (Decimal): 554515782561030500

@@ -1,0 +1,12 @@
+--Number Base Conversion--
+
+1. Decimal to Radix-N
+2. Radix-N to Decimal
+
+
+Select mode: 2
+Enter a number: 123ABC456789
+Enter a desired radix: 12
+Invalid radix-12 number!
+
+--Program terminated--
