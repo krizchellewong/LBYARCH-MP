@@ -139,6 +139,13 @@ invalid_radix_mode_2:
     NEWLINE
     JMP terminate_program
     
+invalid_rad_number:
+    PRINT_STRING "Invalid radix-"
+    PRINT_DEC 1, r10
+    PRINT_STRING " number!"
+    NEWLINE
+    JMP terminate_program
+    
     
 
   
@@ -231,6 +238,7 @@ bam:
     ; move character to RCX and convert to its equivalent in decimal
     movzx rcx, byte [numout + rsi - 1]
     
+    
     ; check if lowercase, then capitalize
     cmp rcx, 97
     jge capitalize
@@ -243,6 +251,10 @@ bam:
     
     ; multiple that to rax, the product of N^X
     reduced:
+        ; check if allowed
+        cmp rcx, r10
+        jg invalid_rad_number
+        
     mul rcx
     
     ret
@@ -251,7 +263,7 @@ capitalize:
     ; if lower, make bigger
     sub rcx, 32
     jmp capped
-    
+
 num:
     ; there is a gap between 9 and A in ASCII of 7, so subtract if
     ; it is A+
