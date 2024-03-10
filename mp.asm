@@ -4,17 +4,11 @@
 
 %include "io64.inc"
 
-section .data
-reversedResult db "" ;converted string (reserved)
-reversedLen db 0
-result db ""
-buf times 16 db 0
-
-
 section .text
 global main
 
 main:
+    mov rbp, rsp; for correct debugging
     ; show menu GUI
     JMP show_menu
     
@@ -150,12 +144,18 @@ show_menu:
     NEWLINE
     JMP modeio
   
-
+; !!!====================== BEGINNING OF RADIX-N TO DECIMAL SECTIONS
 radix_to_decimal:
     ; asks for radix-N number
     PRINT_STRING "Enter a number: "
-    GET_STRING buf, r9
-    PRINT_STRING buf ; for removal due to CLI
+    GET_STRING buf, 101
+    mov rax, 0
+    call input_iter
+    mov byte [numout + rax + 7], '!'
+    mov byte [numout + rax + 8], 0xa
+    mov rax, 0
+    call output_iter
+    
     NEWLINE
     
     ; asks for its radix to convert to decimal properly
@@ -173,5 +173,28 @@ radix_to_decimal:
 
     ; do conversion work here
     mov r11, 0
-    PRINT_STRING buf
+    
+    PRINT_STRING "Output (Decimal): "
     ret
+    
+input_iter: ; one iteration of input loop
+        mov byte ch, [buf + rax]
+        mov byte [numout + rax + 7], ch        ; writing one char from name to output
+        inc rax
+        cmp byte [buf + rax], 0x0             ; GET_STRING ends string with 0-code char
+        jne input_iter
+        ret
+
+output_iter: ; one iteration of output loop
+        PRINT_CHAR [numout + rax]        ; char given to out
+        inc rax
+        cmp byte [numout + rax], 0xa     ; if char is NUL, iteration stops
+        jne output_iter
+        ret
+    
+section .data
+reversedResult db "" ;converted string (wwwwwreserved)
+reversedLen db 0
+result db ""
+buf: times 101 db 0x0a
+numout db 'Hello, '
