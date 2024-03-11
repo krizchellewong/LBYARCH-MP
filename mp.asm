@@ -38,12 +38,14 @@ terminate_program:
     PRINT_STRING "--Program terminated--"
     NEWLINE
     
-    ;exit with error level 0
-
+    GET_CHAR rax ; gets the last enter key pressed
     NEWLINE
-    GET_CHAR rax ; get the enter key
-    PRINT_STRING "Press any key to exit..."
+    PRINT_STRING "Press ENTER to exit..."
     GET_CHAR rax
+    
+    ;exit with error level 0
+    mov ax,0x4c00
+    int 0x21
     
     xor rax, rax
     ret
@@ -52,7 +54,8 @@ modeio:
     ; this section is for inputting modes from the menu
     PRINT_STRING "Select mode: "
     GET_DEC 1, r8
-    
+    ;PRINT_DEC 1, r8
+    NEWLINE
     
     ; if 1, then DEC->RADIX
     CMP r8, 1
@@ -71,14 +74,17 @@ decimal_to_radix:
     ; asks for dec number
     PRINT_STRING "Enter a decimal number: "
     GET_DEC 8, r9
-    
+    ;PRINT_DEC 8, r9 ; for removal due to CLI
+    NEWLINE
     
     ; asks for radix to convert to
     PRINT_STRING "Enter a desired radix: "
     GET_DEC 1, r10
+    ;PRINT_DEC 1, r10
+    NEWLINE
     
+    call radix_err_chk
     
-      
     NEWLINE
     PRINT_STRING "Output (radix-"
     PRINT_DEC 8, r10
@@ -199,14 +205,15 @@ radix_to_decimal:
     xor rax, rax
     call in_iter
 
-    xor rax, rax ; clear register and print string
-    call out_iter
+    ;xor rax, rax ; clear register and print string
+    ;call out_iter
     
     NEWLINE
     
     ; asks for its radix to convert to decimal properly
     PRINT_STRING "Enter a desired radix: "
     GET_DEC 1, r10
+    ;PRINT_DEC 1, r10
     NEWLINE
 
     call radix_err_chk
