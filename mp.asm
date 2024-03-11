@@ -268,6 +268,8 @@ to_dec:
     xor r11, r11
     xor r12, r12
     xor r15, r15
+    
+    call terminate_program
     ret
 
 bam:
