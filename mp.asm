@@ -281,6 +281,8 @@ bam:
     ; move character to RCX and convert to its equivalent in decimal
     movzx rcx, byte [numout + rsi - 1]
     
+    cmp rcx, ' '
+    je invalid_rad_number
     
     ; check if lowercase, then capitalize
     cmp rcx, 97
